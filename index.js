@@ -1,16 +1,14 @@
 const express = require("express");
-const { LOCAL_PORT } = require('./constants')
-const { clear } = require('./utils')
-
+const fetch = require("node-fetch");
+const port = 3001;
 const ImageDetection = require("./image-detection");
+const KQXS_ORIGIN = "https://minhngoc.net.vn/getkqxs/da-nang.js";
 const app = express();
 
 app.get("/", async (req, res) => {
-  clear()
   const result = await ImageDetection()
-  console.log("result", result)
   res.send(result);
 });
-app.listen(LOCAL_PORT, () =>
-  console.log(`Example app listening at http://localhost:${LOCAL_PORT}`)
+app.listen(port, () =>
+  console.log(`Example app listening at http://localhost:${port}`)
 );
