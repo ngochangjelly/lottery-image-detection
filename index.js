@@ -4,6 +4,9 @@ const port = 3000;
 const ImageDetection = require("./image-detection");
 const KQXS_ORIGIN = "https://minhngoc.net.vn/getkqxs/da-nang.js";
 const app = express();
+var cors = require('cors')
+
+app.use(cors())
 
 app.post("/image", async (req, res) => {
   // const result = await ImageDetection()
