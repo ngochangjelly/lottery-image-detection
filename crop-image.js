@@ -18,7 +18,7 @@ module.exports = (image) => {
   sharp(image).extract({ width: croppedWidth, height: croppedHeight, left: croppedLeft, top: croppedTop }).toFile(outputImage)
     .then(function (new_file_info) {
       console.log("Image cropped and saved");
-      return outputImage;
+      return;
     })
     .catch(function (err) {
       console.log("​err", err)
