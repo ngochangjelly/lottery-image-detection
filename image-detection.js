@@ -1,25 +1,32 @@
 const { createWorker } = require('tesseract.js')
 const Jimp = require('jimp');
+const { uuid } = require('uuidv4')
+const constants = require('./constants');
+const { TESSERACT_OPTION } = constants
+const cropImage = require('./crop-image')
+const fs = require('fs');
 
-const constants = require('./constants')
-const { FINAL_PROCESSED_IMG_FOLDER, TESSERACT_OPTION } = constants
-
-async function convertToGrayScale(image) {
-  const processImage = await Jimp.read(`${image}`)
+async function convertToGrayScale(dir, image) {
+  const processImage = await Jimp.read(`${dir}/${image}`)
   try {
     await processImage.greyscale()
     await processImage.contrast(1)
     await processImage.quality(100)
-    await processImage.writeAsync(`${FINAL_PROCESSED_IMG_FOLDER}/${image}`);
-    console.log('finish convert image grayscale!')
-    await processImage.
-      return
+    const fileName = uuid() + '.png'
+    await processImage.writeAsync(`${dir}/${fileName}`)
+    return fileName
   } catch (error) {
-    console.log("convertToGrayScale -> error", error)
+    console.log("error during convert gray scale", error)
   }
   return
 }
-module.exports = async function () {
+module.exports = async function (image) {
+  const dir = 'tmp-' + uuid();
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+
   const worker = createWorker()
   try {
     await worker.load()
@@ -29,10 +36,10 @@ module.exports = async function () {
     // Convert image to grayscale
     // Sharpen the image
     // Perform morphological transformations to enhance text
+    const croppedImage = await cropImage(dir, image)
 
-    const originalImage = "9.png"
-    await convertToGrayScale(originalImage)
-    const { data: { text } } = await worker.recognize(`${FINAL_PROCESSED_IMG_FOLDER}/${originalImage}`, TESSERACT_OPTION, {
+    const grayImage = await convertToGrayScale(dir, croppedImage)
+    const { data: { text } } = await worker.recognize(`${dir}/${grayImage}`, TESSERACT_OPTION, {
       logger: m => console.log(m)
     })
     await worker.terminate()

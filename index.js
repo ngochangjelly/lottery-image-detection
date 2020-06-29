@@ -1,18 +1,25 @@
 const express = require("express");
 const fetch = require("node-fetch");
-const port = 3000;
-const ImageDetection = require("./image-detection");
+const port = process.env.PORT || 3000;
 const KQXS_ORIGIN = "https://minhngoc.net.vn/getkqxs/da-nang.js";
-const app = express();
 var cors = require('cors')
+const app = express();
+const bodyParser = require('body-parser');
+const imageDetection = require("./image-detection");
 
 app.use(cors())
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({
+  limit: '50mb',
+  extended: true,
+  parameterLimit: 50000
+}));
 
 app.post("/image", async (req, res) => {
-  // const result = await ImageDetection()
-  // res.send(result);
-  console.log(req.body)
-  res.send('ok')
+  console.log("req", req.body)
+  const serie = await imageDetection(req.body.data)
+  console.log("serie", serie)
+  res.send(serie)
 });
 app.listen(port, () =>
   console.log(`server is running at http://localhost:${port}`)
