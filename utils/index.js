@@ -17,5 +17,6 @@ function clear() {
   process.stdout.write(stdout);
 }
 module.exports = {
-  clear
+  clear,
+  deleteFolderRecursive
 }

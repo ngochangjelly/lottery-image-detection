@@ -5,6 +5,7 @@ const constants = require('./constants');
 const { TESSERACT_OPTION } = constants
 const cropImage = require('./crop-image')
 const fs = require('fs');
+const deleteFolderRecursive = require('./utils/deleteFolderRecursive.js')
 
 async function convertToGrayScale(dir, image) {
   const processImage = await Jimp.read(`${dir}/${image}`)
@@ -43,6 +44,7 @@ module.exports = async function (image) {
       logger: m => console.log(m)
     })
     await worker.terminate()
+    deleteFolderRecursive(dir)
     return text
   } catch (error) {
     console.error(`error: `, error)
