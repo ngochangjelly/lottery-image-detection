@@ -30,20 +30,50 @@ module.exports = async function (image) {
 
   const worker = createWorker()
   try {
-    await worker.load()
-    await worker.loadLanguage('eng')
-    await worker.initialize('eng')
-    // Here's a simple preprocessing step to clean up the image before using pytesseract
-    // Convert image to grayscale
-    // Sharpen the image
-    // Perform morphological transformations to enhance text
-    const croppedImage = await cropImage(dir, image)
+    // await worker.load()
+    // await worker.loadLanguage('eng')
+    // await worker.initialize('eng')
+    // // Here's a simple preprocessing step to clean up the image before using pytesseract
+    // // Convert image to grayscale
+    // // Sharpen the image
+    // // Perform morphological transformations to enhance text
+    // const croppedImage = await cropImage(dir, image)
 
-    const grayImage = await convertToGrayScale(dir, croppedImage)
-    const { data: { text } } = await worker.recognize(`${dir}/${grayImage}`, TESSERACT_OPTION, {
-      logger: m => console.log(m)
-    })
-    await worker.terminate()
+    // const grayImage = await convertToGrayScale(dir, croppedImage)
+    // const { data: { text } } = await worker.recognize(`${dir}/${grayImage}`, TESSERACT_OPTION, {
+    //   logger: m => console.log(m)
+    // })
+    // await worker.terminate()
+    const regex = require('./regex');
+    const vision = require('@google-cloud/vision');
+
+    // Creates a client
+    const client = new vision.ImageAnnotatorClient();
+
+    /**
+     * TODO(developer): Uncomment the following line before running the sample.
+     */
+    const fileName = '1.jpg';
+    let date, serie;
+    // Performs text detection on the local file
+    async function detect(fileName) {
+      const [result] = await client.textDetection(fileName);
+      const detections = result.textAnnotations;
+      detections.forEach((text) => {
+        const desc = text.description;
+        if (desc.match(regex.date)) {
+          date = desc;
+        }
+        if (desc.match(regex.digits6)) {
+          serie = desc;
+        }
+      });
+    }
+    (async function () {
+      detect(fileName);
+      console.log(date);
+      console.log(serie);
+    })();
     deleteFolderRecursive(dir)
     return text
   } catch (error) {

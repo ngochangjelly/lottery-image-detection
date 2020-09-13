@@ -19,6 +19,7 @@ app.post("/image", async (req, res) => {
   const serie = await imageDetection(req.body.data)
   res.send(serie)
 });
+
 app.listen(port, () =>
   console.log(`server is running at http://localhost:${port}`)
 );
