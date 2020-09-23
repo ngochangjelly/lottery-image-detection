@@ -1,82 +1,92 @@
-const { createWorker } = require('tesseract.js')
-const Jimp = require('jimp');
 const { uuid } = require('uuidv4')
-const constants = require('./constants');
-const { TESSERACT_OPTION } = constants
-const cropImage = require('./crop-image')
 const fs = require('fs');
+const vision = require('@google-cloud/vision');
+const client = new vision.ImageAnnotatorClient();
 const deleteFolderRecursive = require('./utils/deleteFolderRecursive.js')
+const regex = require('./regex');
+const constant = require('./constants')
 
-async function convertToGrayScale(dir, image) {
-  const processImage = await Jimp.read(`${dir}/${image}`)
-  try {
-    await processImage.greyscale()
-    await processImage.contrast(1)
-    await processImage.quality(100)
-    const fileName = uuid() + '.png'
-    await processImage.writeAsync(`${dir}/${fileName}`)
-    return fileName
-  } catch (error) {
-    console.log("error during convert gray scale", error)
-  }
-  return
+const axios = require("axios")
+const cheerio = require("cheerio")
+
+async function fetchHTML(url) {
+  const { data } = await axios.get(url)
+  return cheerio.load(data)
 }
+
+async function writeImageBuffer(dir, image) {
+  imgBuffer = Buffer.from(image.split(';base64,').pop(), 'base64')
+  const fileName = uuid() + '.png';
+  fs.writeFileSync(`${dir}/${fileName}`, imgBuffer);
+  return fileName
+};
+
+async function detect(fileName) {
+  let date, serie, province
+  const [result] = await client.textDetection(fileName);
+  const detections = result.textAnnotations;
+  const detectionsTextArr = detections.map(text => text.description)
+  const detectionsText = detectionsTextArr.join(' ')
+  // console.log(detectionsText)
+  constant.provinceCode.forEach(function (value, key) {
+    if (detectionsText.toLocaleLowerCase().includes(key.toLowerCase())) {
+      province = constant.provinceXs.get(value)
+    }
+  })
+  detections.forEach(text => {
+    const desc = text.description
+    if (desc.match(regex.date)) {
+      date = desc
+    }
+    if (desc.match(regex.digits6)) {
+      serie = desc
+    }
+  });
+  return { date, serie, province }
+}
+
 module.exports = async function (image) {
   const dir = 'tmp-' + uuid();
-
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
-
-  const worker = createWorker()
   try {
-    // await worker.load()
-    // await worker.loadLanguage('eng')
-    // await worker.initialize('eng')
-    // // Here's a simple preprocessing step to clean up the image before using pytesseract
-    // // Convert image to grayscale
-    // // Sharpen the image
-    // // Perform morphological transformations to enhance text
-    // const croppedImage = await cropImage(dir, image)
-
-    // const grayImage = await convertToGrayScale(dir, croppedImage)
-    // const { data: { text } } = await worker.recognize(`${dir}/${grayImage}`, TESSERACT_OPTION, {
-    //   logger: m => console.log(m)
-    // })
-    // await worker.terminate()
-    const regex = require('./regex');
-    const vision = require('@google-cloud/vision');
-
-    // Creates a client
-    const client = new vision.ImageAnnotatorClient();
-
-    /**
-     * TODO(developer): Uncomment the following line before running the sample.
-     */
-    const fileName = '1.jpg';
-    let date, serie;
-    // Performs text detection on the local file
-    async function detect(fileName) {
-      const [result] = await client.textDetection(fileName);
-      const detections = result.textAnnotations;
-      detections.forEach((text) => {
-        const desc = text.description;
-        if (desc.match(regex.date)) {
-          date = desc;
-        }
-        if (desc.match(regex.digits6)) {
-          serie = desc;
-        }
-      });
+    console.log('ccccccccccccc')
+    const fileName = await writeImageBuffer(dir, image)
+    const data = await detect(`${dir}/${fileName}`);
+    const { serie, date, province } = data
+    if (!date || !province) {
+      return { message: 'better luck next time' }
     }
-    (async function () {
-      detect(fileName);
-      console.log(date);
-      console.log(serie);
-    })();
+    const url = constant.API_ENDPOINT + province + '.html'
+    const $ = await fetchHTML(url)
+    console.log('ccccccccccccc')
+    const prizes = $('table[class="table-result"]').find('tr>td').toArray().map(element => $(element).text());
+    const trimmedPrizes = prizes.map(item => item.replace(/(^\s+|\s+$)/g, ' '))
+    let sortedPrizes = new Map([])
+    trimmedPrizes.forEach((value, index) => {
+      if (index % 2 === 0 && index !== trimmedPrizes.length - 1) {
+        sortedPrizes[value] = trimmedPrizes[index + 1]
+      }
+    })
+    let result
+    if (serie) {
+      for (const [key, value] of Object.entries(sortedPrizes)) {
+        if (value.includes(serie)) {
+          result = key
+        }
+      }
+    }
+    console.log('ccccccccccccc')
     deleteFolderRecursive(dir)
-    return text
+    console.log('ccccccccccccc')
+    if (result) {
+      return { message: 'better luck next time', prizes: sortedPrizes, wonPrize: value, province, serie, date }
+    } else {
+      return { message: 'better luck next time', prizes: sortedPrizes, province, serie, date }
+    }
   } catch (error) {
     console.error(`error: `, error)
+    throw new Error(error)
   }
 }

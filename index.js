@@ -16,8 +16,13 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.post("/image", async (req, res) => {
-  const serie = await imageDetection(req.body.data)
-  res.send(serie)
+  try {
+    const data = await imageDetection(req.body.data)
+    console.log('bbbbbbbbbbb ', data)
+    res.send(data)
+  } catch (error) {
+    res.send(data)
+  }
 });
 
 app.listen(port, () =>
