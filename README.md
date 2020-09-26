@@ -1,6 +1,7 @@
 # lottery-image-detection
 
-This project uses Google Cloud Vision to extract text from the lottery image and uses Nodejs as a server to communicate with fromend
+- This project uses Google Cloud Vision to extract text from the lottery image and uses Nodejs as a server to communicate with fromend
+- The process could be described as: User uploads lottery image in the client side -> image data is transfered to the server -> the server uses Google Cloud Vision service to extract text from the image -> crawl lottery prizes data to compare with the extracted text -> return to the client the result whether the user wins the prize or not
 
 ## Requirements
 
