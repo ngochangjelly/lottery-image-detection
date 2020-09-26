@@ -2,12 +2,12 @@ const { uuid } = require('uuidv4')
 const fs = require('fs');
 const vision = require('@google-cloud/vision');
 const client = new vision.ImageAnnotatorClient();
+const axios = require("axios")
+const cheerio = require("cheerio")
+
 const deleteFolderRecursive = require('./utils/deleteFolderRecursive.js')
 const regex = require('./regex');
 const constant = require('./constants')
-
-const axios = require("axios")
-const cheerio = require("cheerio")
 
 async function fetchHTML(url) {
   const { data } = await axios.get(url)
