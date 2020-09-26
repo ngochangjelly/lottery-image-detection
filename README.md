@@ -1,6 +1,6 @@
 # lottery-image-detection
 
-This peoject uses Google Cloud Vision to extract text from the lottery image and uses Nodejs as a server to communicate with fromend
+This project uses Google Cloud Vision to extract text from the lottery image and uses Nodejs as a server to communicate with fromend
 
 ## Requirements
 
@@ -22,6 +22,8 @@ export GOOGLE_APPLICATION_CREDENTIALS=~/Desktop/your-google-auth-key.json
 
 - To check whether you have declared it successfully, you can run this command:
   ![](demo-credentials.png)
+
+- Clone and run the client here: https://github.com/ngochangjelly/client-lottery-detection
 
 ## Install packages and dependencies
 
