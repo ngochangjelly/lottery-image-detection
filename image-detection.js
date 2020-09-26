@@ -37,7 +37,7 @@ async function detect(fileName) {
   constant.provinceCode.forEach(function (value, key) {
     if (detectionsText.toLocaleLowerCase().includes(key.toLowerCase())) {
       province = constant.provinceXs.get(value)
-      fullProvince = getByValue(constant.provinceCode, province)
+      fullProvince = getByValue(constant.provinceCode, value)
     }
   })
   detections.forEach(text => {
