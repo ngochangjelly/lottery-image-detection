@@ -18,7 +18,6 @@ app.use(bodyParser.urlencoded({
 app.post("/image", async (req, res) => {
   try {
     const data = await imageDetection(req.body.data)
-    console.log('bbbbbbbbbbb ', data)
     res.send(data)
   } catch (error) {
     res.send(data)

@@ -14,6 +14,13 @@ async function fetchHTML(url) {
   return cheerio.load(data)
 }
 
+function getByValue(map, searchValue) {
+  for (let [key, value] of map.entries()) {
+    if (value === searchValue)
+      return key;
+  }
+}
+
 async function writeImageBuffer(dir, image) {
   imgBuffer = Buffer.from(image.split(';base64,').pop(), 'base64')
   const fileName = uuid() + '.png';
@@ -22,15 +29,15 @@ async function writeImageBuffer(dir, image) {
 };
 
 async function detect(fileName) {
-  let date, serie, province
+  let date, serie, province, fullProvince
   const [result] = await client.textDetection(fileName);
   const detections = result.textAnnotations;
   const detectionsTextArr = detections.map(text => text.description)
   const detectionsText = detectionsTextArr.join(' ')
-  // console.log(detectionsText)
   constant.provinceCode.forEach(function (value, key) {
     if (detectionsText.toLocaleLowerCase().includes(key.toLowerCase())) {
       province = constant.provinceXs.get(value)
+      fullProvince = getByValue(constant.provinceCode, province)
     }
   })
   detections.forEach(text => {
@@ -42,7 +49,7 @@ async function detect(fileName) {
       serie = desc
     }
   });
-  return { date, serie, province }
+  return { date, serie, province, fullProvince }
 }
 
 module.exports = async function (image) {
@@ -51,16 +58,14 @@ module.exports = async function (image) {
     fs.mkdirSync(dir);
   }
   try {
-    console.log('ccccccccccccc')
     const fileName = await writeImageBuffer(dir, image)
     const data = await detect(`${dir}/${fileName}`);
-    const { serie, date, province } = data
+    const { serie, date, province, fullProvince } = data
     if (!date || !province) {
       return { message: 'better luck next time' }
     }
-    const url = constant.API_ENDPOINT + province + '.html'
+    const url = constant.API_ENDPOINT + province + `-${date}` + '.html'
     const $ = await fetchHTML(url)
-    console.log('ccccccccccccc')
     const prizes = $('table[class="table-result"]').find('tr>td').toArray().map(element => $(element).text());
     const trimmedPrizes = prizes.map(item => item.replace(/(^\s+|\s+$)/g, ' '))
     let sortedPrizes = new Map([])
@@ -77,13 +82,11 @@ module.exports = async function (image) {
         }
       }
     }
-    console.log('ccccccccccccc')
     deleteFolderRecursive(dir)
-    console.log('ccccccccccccc')
     if (result) {
-      return { message: 'better luck next time', prizes: sortedPrizes, wonPrize: value, province, serie, date }
+      return { message: `You have won ${result}`, prizes: sortedPrizes, wonPrize: result, province, serie, date, fullProvince }
     } else {
-      return { message: 'better luck next time', prizes: sortedPrizes, province, serie, date }
+      return { message: 'better luck next time', prizes: sortedPrizes, province, serie, date, fullProvince }
     }
   } catch (error) {
     console.error(`error: `, error)
